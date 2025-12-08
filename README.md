@@ -1,360 +1,230 @@
-# AIoT-AGV
-AIoT AGV 戰術控制台 - 工業級多AGV協同調度系統
-🚀 項目概述
-這是一個用於模擬真實工業環境中多台自動導引車（AGV）協同工作的網頁應用。系統提供直觀的戰術地圖、實時監控、任務調度和障礙物編輯等功能，旨在展示AGV系統的調度算法和路徑規劃能力。
+# AIoT-AGV — 戰術控制台
 
-✨ 核心功能
-1. 多AGV控制系統
-同時控制兩台不同類型AGV（物流型、巡檢型）
+**工業級多AGV協同調度系統**
 
-獨立狀態管理：IDLE, MOVING, PAUSED, ESTOP, CHARGING, ERROR
+> 一個用於模擬真實工業環境中多台自動導引車（AGV）協同工作的網頁應用。展示戰術地圖、實時監控、任務調度以及障礙物編輯等功能，便於演示調度算法與路徑規劃能力。
 
-獨立任務隊列和參數配置
+---
 
-2. 真實模擬系統
-電量管理：電量消耗、自動充電、低電量保護
+## 🚀 核心概念
 
-物理模擬：速度控制、轉向計算、障礙物避讓
+* **多AGV協同**：同時模擬物流型與巡檢型 AGV，支援獨立狀態及任務隊列。
+* **真實物理模擬**：電量/溫度/載重/速度等物理屬性模擬，並支援故障與感測器雜訊模擬。
+* **可編輯工廠佈局**：在戰術地圖上增刪障礙物，並載入預設佈局。
+* **任務調度與路徑優化**：手動或自動生成任務、隊列管理、智能路線優化。
+* **視覺化監控**：Canvas 實時渲染、數據面板、日誌系統與事件追蹤。
 
-故障模擬：感測器雜訊、網路延遲、馬達過熱
+---
 
-環境互動：載重影響、溫度監控、路徑阻塞
+## ✨ 主要功能
 
-3. 障礙物編輯系統
-右鍵點擊地圖添加障礙物
+1. **多AGV控制系統**
 
-點擊選擇、Delete鍵刪除障礙物
+   * 支援多台 AGV（例：物流型、巡檢型）
+   * 每台車獨立狀態：`IDLE, MOVING, PAUSED, ESTOP, CHARGING, ERROR`
+   * 獨立任務隊列與參數配置
 
-多種障礙物類型：RACK, WORKSTATION, PILLAR, MACHINE
+2. **真實模擬系統**
 
-工廠佈局一鍵載入
+   * 電量管理（耗電、充電、低電量保護）
+   * 物理模擬（速度、轉向、避障）
+   * 故障模擬（感測器雜訊、網路延遲、馬達過熱）
+   * 環境互動（載重影響、溫度、路徑阻塞）
 
-4. 任務調度系統
-任務隊列管理（最大20個任務）
+3. **障礙物編輯系統**
 
-連續任務模式、巡邏路徑生成
+   * 右鍵地圖新增障礙物；點選刪除（`Delete`）
+   * 支援多種類型：`RACK`, `WORKSTATION`, `PILLAR`, `MACHINE`
+   * 一鍵載入工廠佈局
 
-智能路線優化算法
+4. **任務調度系統**
 
-手動/自動任務生成
+   * 任務隊列（上限 20 個）
+   * 連續任務 / 巡邏路徑生成
+   * 智能路徑優化（可切換手動 / 自動生成）
 
-5. 視覺化界面
-HTML5 Canvas實時渲染
+5. **視覺化與監控**
 
-動態網格系統、縮放控制
+   * HTML5 Canvas 實時渲染（動態網格、縮放）
+   * 側欄實時數據面板、事件日誌
 
-實時數據監控面板
+---
 
-日誌系統和事件記錄
+## 🛠️ 技術棧
 
-🛠️ 技術棧
-前端框架：原生HTML5/CSS3/JavaScript
+* **前端**：原生 HTML5 / CSS3 / JavaScript
+* **渲染**：HTML5 Canvas 2D API（Canvas 分層）
+* **狀態管理**：自定義狀態機與事件系統
+* **物理**：自實作 AGV 物理計算模型（速度、角速度、碰撞）
+* **UI**：CSS Grid / Flexbox、動畫與漸層
 
-圖形渲染：HTML5 Canvas 2D API
+---
 
-狀態管理：自定義狀態機和事件系統
+## 📁 專案結構（建議）
 
-物理引擎：自實現AGV物理計算模型
-
-UI/UX：CSS Grid/Flexbox、漸變效果、動畫
-
-📁 項目結構
-text
+```
 AGV-Control-Console/
-├── index.html              # 主HTML文件（包含CSS和JS）
-├── README.md               # 項目說明文件
-├── LICENSE                 # 開源許可證
-├── .gitignore              # Git忽略文件
-└── assets/                 # 靜態資源（可選）
-    ├── images/             # 圖片資源
-    └── docs/               # 文檔資料
-🎮 快速開始
-1. 本地運行
-bash
-# 克隆項目
+├── index.html
+├── README.md
+├── LICENSE
+├── .gitignore
+├── src/
+│   ├── app.js
+│   ├── renderer.js
+│   ├── physics.js
+│   ├── taskScheduler.js
+│   └── obstacles.js
+└── assets/
+    ├── images/
+    └── docs/
+```
+
+---
+
+## 🎮 快速開始
+
+**1. 克隆專案**
+
+```bash
 git clone https://github.com/yourusername/agv-control-console.git
-
-# 進入項目目錄
 cd agv-control-console
+```
 
-# 直接打開index.html或在本地服務器運行
-# 使用Python簡單服務器
+**2. 本地啟動（任一方式）**
+
+```bash
+# Python 內建簡易伺服器
 python -m http.server 8000
-# 或使用Node.js
+# 或使用 Node.js 的 serve
 npx serve .
-2. 使用說明
-選擇AGV：點擊左側AGV卡片選擇要控制的車輛
+```
 
-設定目標：
+**3. 操作說明（UI）**
 
-左鍵點擊地圖：直接導航
+* 選擇 AGV：點擊左側 AGV 卡片
+* 設定目標：
 
-Ctrl+左鍵：添加到任務隊列
+  * 左鍵點擊地圖 → 直接導航
+  * Ctrl + 左鍵 → 加入任務隊列
+  * 右鍵 → 添加障礙物
+* 任務管理：使用任務分頁管理任務隊列；可啟動連續任務模式
+* 障礙物編輯：切換到障礙物分頁、右鍵新增、點擊選擇、`Delete` 刪除
+* 監控：右側面板查看電量、溫度、任務狀態與日誌
 
-右鍵：添加障礙物
+---
 
-任務管理：
+## 🧭 架構設計（高階）
 
-使用任務分頁管理任務隊列
+* UI 渲染層（View） — Canvas 與面板
+* 控制層（Controller） — 事件處理、使用者互動
+* 模型層（Model） — AGV 狀態、任務、障礙物
+* 物理層（Physics） — 運動學、碰撞偵測、感測器模擬
 
-啟動連續任務模式自動運行
+---
 
-障礙物編輯：
+## ⚙️ 主要模組說明
 
-切換到障礙物分頁
+* **updateAGVPhysics**：速度計算、轉向、避障、電量/溫度更新
+* **taskQueues**：任務入隊、出隊、優先權管理、自動生成任務
+* **obstacles**：障礙物 CRUD、碰撞檢測
+* **eventLog**：事件記錄、日誌與警示
+* **faultSim**：模擬故障（sensor noise, network delay, motor overheating）
 
-右鍵添加，點擊選擇，Delete鍵刪除
+---
 
-監控系統：
+## 🔧 系統配置（範例）
 
-右側面板查看實時數據
-
-事件日誌跟蹤系統活動
-
-🔧 開發指南
-架構設計
-text
-┌─────────────────────────────────────┐
-│           UI 渲染層 (View)          │
-├─────────────────────────────────────┤
-│      控制層 (Controller)            │
-│  ┌─────────────────────────────┐    │
-│  │  事件處理  │ 用戶交互      │    │
-│  └─────────────────────────────┘    │
-├─────────────────────────────────────┤
-│      模型層 (Model)                  │
-│  ┌─────────────────────────────┐    │
-│  │  AGV狀態  │ 任務隊列       │    │
-│  │ 障礙物數據│ 系統配置       │    │
-│  └─────────────────────────────┘    │
-├─────────────────────────────────────┤
-│      物理引擎層 (Physics)            │
-│  ┌─────────────────────────────┐    │
-│  │ 移動計算 │ 碰撞檢測        │    │
-│  │ 感測器模擬│ 路徑規劃       │    │
-│  └─────────────────────────────┘    │
-└─────────────────────────────────────┘
-主要模塊
-AGV物理計算 (updateAGVPhysics)
-
-速度計算、轉向控制
-
-障礙物檢測和避讓
-
-電量消耗和溫度計算
-
-任務調度系統 (taskQueues)
-
-隊列管理
-
-任務執行順序
-
-自動任務生成
-
-障礙物管理 (obstacles)
-
-障礙物添加/刪除
-
-碰撞檢測
-
-視覺化渲染
-
-事件系統 (addEvent, addLog)
-
-系統日誌記錄
-
-實時事件通知
-
-故障模擬和恢復
-
-⚙️ 配置參數
-系統配置 (CONFIG)
-javascript
-{
-  TARGET_THRESHOLD: 3.0,        // 目標到達閾值
+```javascript
+const CONFIG = {
+  TARGET_THRESHOLD: 3.0,        // 目標到達閾值 (px)
   MIN_SPEED: 0.5,               // 最小移動速度
   MAX_SPEED: 10.0,              // 最大移動速度
-  BATTERY_DRAIN_RATE: 0.002,    // 電量消耗率
-  COLLISION_RADIUS: 30,         // 碰撞檢測半徑
-  CHARGING_RATE: 0.5,           // 充電速度
-  REALISM_MODE: true,           // 真實模擬模式
+  BATTERY_DRAIN_RATE: 0.002,    // 電量消耗率 (每幀)
+  COLLISION_RADIUS: 30,         // 碰撞檢測半徑 (px)
+  CHARGING_RATE: 0.5,           // 充電速度 (單位/秒)
+  REALISM_MODE: true,           // 真實模擬模式開關
   TASK_QUEUE_LIMIT: 20          // 任務隊列限制
-}
-AGV配置
-每個AGV有獨立的配置，包括：
+};
+```
 
-最大速度、電量、顏色
+**AGV 設定（範例）**
 
-載重、效率值
+```javascript
+const AGV_TEMPLATE = {
+  id: 'AGV-001',
+  type: 'logistics',
+  maxSpeed: 8.0,
+  battery: 100.0,
+  loadCapacity: 50, // kg
+  sensors: { temp: 25, current: 0.5 }
+};
+```
 
-感測器參數（溫度、電流等）
+---
 
-🧪 測試功能
-真實模擬測試
-故障模擬：
+## 🧪 測試與工具
 
-javascript
-simulateRealFault()      // 模擬隨機故障
-simulateNetworkDelay()   // 模擬網路延遲
-simulateSensorNoise()    // 模擬感測器雜訊
-系統診斷：
+* 故障模擬：`simulateRealFault()`, `simulateNetworkDelay()`, `simulateSensorNoise()`
+* 系統診斷：`runDiagnostics()`
+* 路線優化：`optimizeFleetRoutes()`
+* 環境測試：`generateRandomObstacles()`, `loadFactoryLayout()`
 
-javascript
-runDiagnostics()         // 執行系統診斷
-optimizeFleetRoutes()    // 優化路線
-環境測試：
+---
 
-javascript
-generateRandomObstacles()  // 生成隨機障礙物
-loadFactoryLayout()        // 載入工廠佈局
-📊 數據流
-text
-用戶交互 → 事件處理 → 狀態更新 → 物理計算 → 視覺化渲染
-    ↓          ↓          ↓          ↓           ↓
-任務指令   控制命令    AGV狀態   位置更新    Canvas繪製
-    ↓          ↓          ↓          ↓           ↓
-任務隊列   系統配置   感測器數據 碰撞檢測    UI更新
-🎯 性能優化
-1. 渲染優化
-使用requestAnimationFrame進行動畫渲染
+## 🔍 效能優化建議
 
-Canvas分層渲染（網格、障礙物、AGV分開）
+1. 渲染：`requestAnimationFrame`、Canvas 分層、限制軌跡點
+2. 計算：增量式物理計算、四叉樹碰撞檢測、事件節流
+3. 記憶體：物件池、定期清理歷史訊息、移除不必要監聽器
 
-軌跡點數限制防止內存泄漏
+---
 
-2. 計算優化
-增量式物理計算
+## 🔮 未來擴展（Roadmap）
 
-四叉樹碰撞檢測（可擴展）
+* 多AGV編隊行駛與任務分配算法
+* A* 與動態重規劃、預測性避障
+* WebSocket / MQTT 實時通訊、REST API
+* 後端儲存（IndexedDB）、分析報表與預測性維護
+* 3D 可視化（WebGL）與 VR/AR 支援
+* 移植至 Vue/React 與 TypeScript 重構
 
-事件節流和防抖
+---
 
-3. 內存管理
-定期清理歷史數據
+## 🤝 貢獻指南
 
-對象池重用
+1. Fork 專案並建立功能分支：`git checkout -b feature/your-feature`
+2. 使用明確 commit 訊息並 push 到遠端
+3. 開 PR 並附上變更說明與測試方式
 
-事件監聽器正確移除
+**程式風格（建議）**
 
-🔮 未來擴展
-計劃功能
-多AGV協同：
+* 變數：`camelCase`
+* 函數：`camelCase`
+* 常數：`UPPER_SNAKE_CASE`
+* 類別：`PascalCase`
 
-編隊行駛
+請使用 JSDoc 註解複雜函式，且在邏輯複雜處加入說明註釋。
 
-任務分配算法
+---
 
-衝突解決協議
+## 📝 版本歷史
 
-高級路徑規劃：
+* **v1.0.0** — 基本 AGV 移動、單一任務系統、基礎 UI
+* **v2.0.0** — 多AGV 支援、任務隊列、障礙物功能
+* **v3.0.0** — 真實物理模擬、障礙物編輯、高級故障模擬
 
-A*算法優化
+---
 
-動態路徑重規劃
+## 📄 授權
 
-預測性避障
+本專案採用 **MIT License**。詳見 LICENSE 檔案。
 
-遠程控制：
+---
 
-WebSocket實時通訊
+## 聯絡
 
-REST API接口
+如有問題或想討論功能設計，歡迎開 issue 或 PR。
 
-MQTT協議支持
+---
 
-數據分析：
-
-運行統計報表
-
-性能分析工具
-
-預測性維護
-
-3D可視化：
-
-WebGL三維渲染
-
-虛擬現實(VR)支持
-
-增強現實(AR)預覽
-
-技術升級
-移植到Vue.js/React框架
-
-使用TypeScript重構
-
-Web Workers後台計算
-
-IndexedDB數據持久化
-
-🤝 貢獻指南
-代碼規範
-命名約定：
-
-變數：camelCase
-
-函數：camelCase
-
-常量：UPPER_SNAKE_CASE
-
-類別：PascalCase
-
-代碼結構：
-
-javascript
-// 模塊導入
-
-// 常量定義
-
-// 全局變數
-
-// 函數定義（按功能分組）
-
-// 事件監聽器
-
-// 初始化代碼
-文檔要求：
-
-函數使用JSDoc註釋
-
-複雜邏輯添加說明註釋
-
-API接口文檔
-
-開發流程
-Fork項目
-
-創建功能分支 (git checkout -b feature/AmazingFeature)
-
-提交更改 (git commit -m 'Add some AmazingFeature')
-
-推送到分支 (git push origin feature/AmazingFeature)
-
-開啟Pull Request
-
-📝 版本歷史
-v1.0.0 (基礎版)
-基礎AGV移動功能
-
-簡單任務系統
-
-基本UI界面
-
-v2.0.0 (增強版)
-多AGV支持
-
-任務隊列系統
-
-障礙物檢測
-
-v3.0.0 (當前版本)
-真實物理模擬
-
-障礙物編輯系統
-
-高級故障模擬
-
-專業工業界面
-
-📄 許可證
-本項目採用 MIT 許可證 - 詳見 LICENSE 文件
+> 若希望我幫你把此 README 轉成 `index.html` 的專案首頁（含樣式與互動按鈕範例）、或改寫為英文版 README，我可以直接替你生成範本檔案。
