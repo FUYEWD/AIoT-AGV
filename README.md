@@ -1,4 +1,5 @@
 🌐 AIoT-AGV — 戰術控制台 🎮
+
 工業級多 AGV 協同調度系統
 一個用於模擬真實工業環境中多台自動導引車（AGV）協同工作的網頁應用。展示戰術地圖、即時監控、任務調度與障礙物編輯，演示調度算法與路徑規劃能力。
 🔗 官方網址：https://aiot-agv.yay.boo/
@@ -56,13 +57,15 @@ UI 框架：CSS Grid / Flexbox + 漸層動畫
 🎮 快速開始
 1. 克隆專案
 bashgit clone https://github.com/yourusername/agv-control-console.git
+
 cd agv-control-console
-2. 啟動伺服器
+
+3. 啟動伺服器
 Python 方案
 bashpython -m http.server 8000
 Node.js 方案
 bashnpx serve .
-3. 打開瀏覽器
+4. 打開瀏覽器
 進入 AIoT-AGV 戰術控制台：http://localhost:8000
 
 🧭 操作指南
