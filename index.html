@@ -1,0 +1,1878 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AIoT AGV 戰術控制台 | 工業級多AGV協同調度系統</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-dark: #0a0e27; --panel-dark: #161b33;
+            --accent-green: #00ff88; --accent-red: #ff6b35; --accent-blue: #00aaff;
+            --accent-yellow: #ffd700; --accent-purple: #aa00ff;
+            --text-main: #e0f8f0; --text-dim: #8a9bb8;
+        }
+        body { 
+            font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; 
+            background: var(--bg-dark); 
+            color: var(--text-main); 
+            min-height: 100vh; 
+            padding: 10px; 
+            -webkit-font-smoothing: antialiased; 
+            background-image: radial-gradient(circle at 20% 30%, rgba(0, 100, 255, 0.05) 0%, transparent 20%),
+                              radial-gradient(circle at 80% 70%, rgba(0, 255, 136, 0.05) 0%, transparent 20%);
+        }
+        .container { max-width: 1800px; margin: 0 auto; }
+        
+        /* 頂部標題區 */
+        .top-bar {
+            display: grid;
+            grid-template-columns: 2fr 1fr 2fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .header-panel {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 15px 20px; 
+            border-radius: 10px;
+            border-left: 5px solid var(--accent-green);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+        h1 { 
+            font-size: 1.8em; 
+            color: var(--accent-green); 
+            text-shadow: 0 0 10px rgba(0,255,136,0.3); 
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .subtitle { 
+            color: var(--accent-blue); 
+            font-size: 0.9em; 
+            font-weight: 300;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .system-stats {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 100%;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--accent-green);
+        }
+        .stat-label {
+            font-size: 0.7em;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+        
+        /* 主網格佈局 */
+        .main-grid { 
+            display: grid; 
+            grid-template-columns: 320px 1fr 400px;
+            gap: 15px; 
+            height: calc(100vh - 150px);
+        }
+        
+        /* 面板通用樣式 */
+        .panel { 
+            background: var(--panel-dark); 
+            border: 1px solid rgba(42, 59, 85, 0.6); 
+            border-radius: 8px; 
+            padding: 20px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+            display: flex; 
+            flex-direction: column; 
+            backdrop-filter: blur(5px);
+        }
+        .panel-title { 
+            color: var(--accent-green); 
+            font-weight: bold; 
+            font-size: 1.2em; 
+            margin-bottom: 20px; 
+            padding-bottom: 12px; 
+            border-bottom: 2px solid rgba(0,255,136,0.3); 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-subtitle {
+            color: var(--accent-blue);
+            font-size: 0.85em;
+            margin-top: -15px;
+            margin-bottom: 15px;
+        }
+        
+        /* 地圖區域 */
+        .map-container {
+            position: relative;
+            flex: 1;
+        }
+        canvas {
+            width: 100%; 
+            height: 100%; 
+            background: #0b1016;
+            border: 1px solid rgba(42, 59, 85, 0.8); 
+            border-radius: 6px;
+            cursor: crosshair;
+        }
+        .map-overlay {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(10, 14, 39, 0.8);
+            border: 1px solid var(--accent-green);
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 0.8em;
+        }
+        
+        /* 按鈕樣式 */
+        .btn {
+            width: 100%; 
+            padding: 12px; 
+            margin: 8px 0;
+            background: linear-gradient(135deg, #1f2a40 0%, #2a3b55 100%);
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green); 
+            cursor: pointer; 
+            border-radius: 6px;
+            font-weight: bold; 
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn:hover {
+            background: linear-gradient(135deg, var(--accent-green) 0%, #00cc77 100%);
+            color: #000;
+            box-shadow: 0 0 15px rgba(0,255,136,0.5);
+            transform: translateY(-2px);
+        }
+        .btn:active { transform: translateY(1px); }
+        .btn-danger { 
+            border-color: var(--accent-red); 
+            color: var(--accent-red);
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 107, 53, 0.05) 100%);
+        }
+        .btn-danger:hover {
+            background: linear-gradient(135deg, var(--accent-red) 0%, #ff8c5a 100%);
+            color: white;
+        }
+        .btn-warning { 
+            border-color: var(--accent-yellow); 
+            color: var(--accent-yellow);
+        }
+        .btn-warning:hover {
+            background: linear-gradient(135deg, var(--accent-yellow) 0%, #ffea80 100%);
+            color: #000;
+        }
+        .btn-secondary {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, var(--accent-blue) 0%, #66ccff 100%);
+            color: white;
+        }
+        
+        /* AGV選擇器 */
+        .agv-selector {
+            margin-bottom: 20px;
+        }
+        .agv-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .agv-card {
+            background: rgba(26, 26, 46, 0.6);
+            border: 2px solid #2a3b55;
+            border-radius: 6px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .agv-card.active {
+            border-color: var(--accent-green);
+            background: rgba(0, 255, 136, 0.1);
+        }
+        .agv-card h4 {
+            color: var(--accent-green);
+            margin-bottom: 5px;
+        }
+        .agv-card .agv-stats {
+            font-size: 0.75em;
+            color: var(--text-dim);
+        }
+        
+        /* 參數控制 */
+        .param-group {
+            margin-bottom: 20px;
+            background: rgba(26, 26, 46, 0.4);
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-blue);
+        }
+        .param-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+        .param-name { color: var(--text-dim); }
+        .param-value { color: var(--accent-green); font-weight: bold; }
+        .param-bar { 
+            height: 8px; 
+            background: rgba(255, 255, 255, 0.1); 
+            margin-top: 8px; 
+            border-radius: 4px; 
+            overflow: hidden; 
+        }
+        .param-bar-fill { 
+            height: 100%; 
+            background: linear-gradient(90deg, var(--accent-green), #00cc77); 
+            transition: width 0.5s ease; 
+            position: relative;
+        }
+        .param-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shine 2s infinite;
+        }
+        @keyframes shine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        /* 任務隊列 */
+        .task-queue {
+            background: rgba(11, 16, 22, 0.7);
+            border: 1px solid rgba(42, 59, 85, 0.5);
+            height: 150px;
+            overflow-y: auto;
+            border-radius: 6px;
+            margin-top: 15px;
+            padding: 10px;
+        }
+        .task-item {
+            background: rgba(31, 42, 64, 0.5);
+            border-left: 3px solid var(--accent-green);
+            padding: 8px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            display: flex;
+            justify-content: space-between;
+        }
+        .task-item.queued { border-color: var(--accent-yellow); }
+        .task-item.completed { border-color: var(--accent-blue); opacity: 0.7; }
+        
+        /* 日誌容器 */
+        .log-container { 
+            background: rgba(11, 16, 22, 0.8); 
+            border: 1px solid rgba(42, 59, 85, 0.6); 
+            height: 200px; 
+            overflow-y: auto; 
+            padding: 10px; 
+            border-radius: 6px;
+            margin-top: 15px;
+            font-family: 'Consolas', 'Courier New', monospace; 
+            font-size: 0.8em;
+        }
+        .log-entry { 
+            margin-bottom: 6px; 
+            border-left: 3px solid #555; 
+            padding-left: 8px; 
+            padding-top: 2px;
+            padding-bottom: 2px;
+            line-height: 1.4;
+        }
+        .log-entry:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        /* 響應式設計 */
+        @media (max-width: 1400px) {
+            .main-grid { grid-template-columns: 300px 1fr; }
+            .right-panel { grid-column: span 2; }
+            canvas { height: 500px; }
+        }
+        @media (max-width: 1024px) {
+            .main-grid { grid-template-columns: 1fr; }
+            canvas { height: 400px; }
+            .top-bar { grid-template-columns: 1fr; }
+        }
+        
+        /* 動態指示器 */
+        .led-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            box-shadow: 0 0 10px currentColor;
+        }
+        
+        /* 滑動條 */
+        .slider-container {
+            margin: 15px 0;
+        }
+        .slider {
+            width: 100%;
+            height: 6px;
+            background: #2a3b55;
+            border-radius: 3px;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .slider:hover { opacity: 1; }
+        
+        /* 分頁標籤 */
+        .tab-container {
+            margin: 15px 0;
+        }
+        .tab-header {
+            display: flex;
+            border-bottom: 1px solid #2a3b55;
+        }
+        .tab-button {
+            padding: 10px 20px;
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .tab-button.active {
+            color: var(--accent-green);
+            border-bottom: 3px solid var(--accent-green);
+        }
+        .tab-content {
+            padding: 15px 0;
+        }
+        .tab-panel {
+            display: none;
+        }
+        .tab-panel.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 頂部資訊欄 -->
+    <div class="top-bar">
+        <div class="header-panel">
+            <h1>🤖 AIoT AGV 戰術控制台</h1>
+            <div class="subtitle">
+                <span class="led-indicator" style="color:#00ff88;"></span>
+                工業級多AGV協同調度系統 | 版本 7.0
+            </div>
+        </div>
+        
+        <div class="header-panel" style="border-color:var(--accent-blue);">
+            <div class="system-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalTasks">0</div>
+                    <div class="stat-label">總任務數</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="activeVehicles">2</div>
+                    <div class="stat-label">運行車輛</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="systemUptime">00:00</div>
+                    <div class="stat-label">系統運行時間</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="header-panel" style="border-color:var(--accent-yellow);">
+            <div style="display: flex; align-items: center; height: 100%;">
+                <div style="flex: 1;">
+                    <div style="color:var(--accent-yellow); font-weight:bold; font-size:0.9em;">系統狀態</div>
+                    <div id="systemStatus" style="color:var(--accent-green); font-weight:bold;">正常運行</div>
+                </div>
+                <div style="font-size: 2em; color: var(--accent-green);">
+                    ⚙️
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 主內容區 -->
+    <div class="main-grid">
+        <!-- 左側控制面板 -->
+        <div class="panel">
+            <div class="panel-title">📡 AGV 控制中心</div>
+            <div class="panel-subtitle">選擇車輛並設定任務</div>
+            
+            <div class="agv-selector">
+                <div class="agv-grid">
+                    <div class="agv-card active" onclick="selectAGV('AGV-01')">
+                        <h4>🟢 AGV-01</h4>
+                        <div class="agv-stats">
+                            <div>狀態: <span id="status-01" style="color:#00ff88;">準備中</span></div>
+                            <div>電量: <span id="battery-01">100%</span></div>
+                        </div>
+                    </div>
+                    <div class="agv-card" onclick="selectAGV('AGV-02')">
+                        <h4>🔵 AGV-02</h4>
+                        <div class="agv-stats">
+                            <div>狀態: <span id="status-02" style="color:#00ff88;">準備中</span></div>
+                            <div>電量: <span id="battery-02">92%</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-container">
+                <div class="tab-header">
+                    <button class="tab-button active" onclick="switchTab('mission')">任務</button>
+                    <button class="tab-button" onclick="switchTab('navigation')">導航</button>
+                    <button class="tab-button" onclick="switchTab('settings')">設定</button>
+                </div>
+                
+                <div class="tab-content">
+                    <!-- 任務分頁 -->
+                    <div id="mission-tab" class="tab-panel active">
+                        <button class="btn" onclick="startContinuousMission()">
+                            <span>⚡</span> 啟動連續任務模式
+                        </button>
+                        <button class="btn" onclick="addTaskToQueue()">
+                            <span>➕</span> 添加當前目標到任務隊列
+                        </button>
+                        <button class="btn" onclick="executeTaskQueue()">
+                            <span>🚀</span> 執行任務隊列
+                        </button>
+                        <button class="btn" onclick="clearTaskQueue()">
+                            <span>🗑️</span> 清空任務隊列
+                        </button>
+                        <button class="btn-secondary" onclick="generateRandomPatrol()">
+                            <span>🔄</span> 生成隨機巡邏路徑
+                        </button>
+                    </div>
+                    
+                    <!-- 導航分頁 -->
+                    <div id="navigation-tab" class="tab-panel">
+                        <button class="btn" onclick="navigateToPoint('dock')">
+                            <span>🔋</span> 導航至充電站
+                        </button>
+                        <button class="btn" onclick="navigateToPoint('pickup')">
+                            <span>📦</span> 導航至取貨點
+                        </button>
+                        <button class="btn" onclick="navigateToPoint('delivery')">
+                            <span>📬</span> 導航至送貨點
+                        </button>
+                        <div style="margin: 15px 0; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px;">
+                            <div style="font-size: 0.8em; color: var(--text-dim); margin-bottom: 5px;">手動座標輸入</div>
+                            <input type="number" id="coordX" placeholder="X座標" style="width:45%; padding:5px; margin-right:5px; background:#1a1a2e; color:white; border:1px solid #2a3b55; border-radius:3px;">
+                            <input type="number" id="coordY" placeholder="Y座標" style="width:45%; padding:5px; background:#1a1a2e; color:white; border:1px solid #2a3b55; border-radius:3px;">
+                            <button class="btn" style="padding:5px; margin-top:8px;" onclick="navigateToManual()">導航</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 設定分頁 -->
+                    <div id="settings-tab" class="tab-panel">
+                        <div class="slider-container">
+                            <label style="color:var(--text-dim); font-size:0.9em;">最大速度限制</label>
+                            <input type="range" min="1" max="20" value="10" class="slider" id="speedLimit">
+                            <div style="text-align:right; font-size:0.8em; color:var(--accent-green);" id="speedValue">10 單位/秒</div>
+                        </div>
+                        <div class="slider-container">
+                            <label style="color:var(--text-dim); font-size:0.9em;">安全距離</label>
+                            <input type="range" min="10" max="100" value="30" class="slider" id="safetyDistance">
+                            <div style="text-align:right; font-size:0.8em; color:var(--accent-green);" id="safetyValue">30 像素</div>
+                        </div>
+                        <button class="btn-warning" onclick="toggleCollisionAvoidance()">
+                            <span>🛡️</span> 切換防碰撞系統
+                        </button>
+                        <button class="btn" style="border-color:#555; color:#888;" onclick="resetSystem()">
+                            <span>🔄</span> 系統重置
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="task-queue" id="taskQueue">
+                <!-- 任務隊列內容將由JS動態生成 -->
+                <div style="text-align:center; color:var(--text-dim); padding:20px;">
+                    <div style="font-size:1.5em;">📋</div>
+                    任務隊列為空
+                </div>
+            </div>
+        </div>
+        
+        <!-- 中間地圖區域 -->
+        <div class="panel">
+            <div class="panel-title">🗺️ 戰術地圖系統</div>
+            <div class="panel-subtitle">即時位置追蹤與路徑規劃</div>
+            
+            <div class="map-container">
+                <canvas id="mapCanvas"></canvas>
+                <div class="map-overlay">
+                    <div>點擊地圖設定目標</div>
+                    <div style="font-size:0.7em; color:#888;">Ctrl+點擊: 添加至任務隊列</div>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+                <button class="btn-warning" onclick="sendCommand('PAUSE_ALL')">
+                    <span>⏸️</span> 暫停所有AGV
+                </button>
+                <button class="btn-danger" onclick="sendCommand('ESTOP_ALL')">
+                    <span>🛑</span> 全部緊急停止
+                </button>
+                <button class="btn-secondary" onclick="sendCommand('RESUME_ALL')">
+                    <span>▶️</span> 恢復所有AGV
+                </button>
+            </div>
+        </div>
+        
+        <!-- 右側監控面板 -->
+        <div class="panel right-panel">
+            <div class="panel-title">📊 即時監控面板</div>
+            
+            <div class="tab-container">
+                <div class="tab-header">
+                    <button class="tab-button active" onclick="switchMonitorTab('telemetry')">遙測</button>
+                    <button class="tab-button" onclick="switchMonitorTab('diagnostics')">診斷</button>
+                    <button class="tab-button" onclick="switchMonitorTab('fleet')">車隊</button>
+                </div>
+                
+                <div class="tab-content">
+                    <!-- 遙測分頁 -->
+                    <div id="telemetry-tab" class="tab-panel active">
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span class="param-name">🟢 當前AGV速度</span>
+                                <span class="param-value" id="val-speed">0 單位/秒</span>
+                            </div>
+                            <div class="param-bar">
+                                <div class="param-bar-fill" id="bar-speed" style="width:0%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span class="param-name">🔋 電池電量</span>
+                                <span class="param-value" id="val-bat">100%</span>
+                            </div>
+                            <div class="param-bar">
+                                <div class="param-bar-fill" id="bar-bat" style="width:100%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span class="param-name">📡 LiDAR距離</span>
+                                <span class="param-value" id="val-lidar">--</span>
+                            </div>
+                            <div class="param-bar">
+                                <div class="param-bar-fill" id="bar-lidar" style="width:0%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="param-group">
+                            <div class="param-label">
+                                <span class="param-name">🧭 航向角度</span>
+                                <span class="param-value" id="val-heading">0°</span>
+                            </div>
+                            <input type="range" min="0" max="360" value="0" class="slider" id="headingSlider" oninput="updateHeading(this.value)">
+                        </div>
+                    </div>
+                    
+                    <!-- 診斷分頁 -->
+                    <div id="diagnostics-tab" class="tab-panel">
+                        <div style="color:var(--text-dim); font-size:0.9em; margin-bottom:10px;">系統診斷狀態</div>
+                        <div id="diagnosticsList">
+                            <div class="diagnostic-item" style="padding:8px; margin-bottom:5px; border-left:3px solid #00ff88; background:rgba(0,255,136,0.1);">
+                                ✅ 導航系統: 正常
+                            </div>
+                            <div class="diagnostic-item" style="padding:8px; margin-bottom:5px; border-left:3px solid #00ff88; background:rgba(0,255,136,0.1);">
+                                ✅ 通訊系統: 正常
+                            </div>
+                            <div class="diagnostic-item" style="padding:8px; margin-bottom:5px; border-left:3px solid #00ff88; background:rgba(0,255,136,0.1);">
+                                ✅ 電源系統: 正常
+                            </div>
+                        </div>
+                        <button class="btn" style="margin-top:15px; padding:8px;" onclick="runDiagnostics()">
+                            🔍 執行系統診斷
+                        </button>
+                    </div>
+                    
+                    <!-- 車隊分頁 -->
+                    <div id="fleet-tab" class="tab-panel">
+                        <div style="font-size:0.9em; color:var(--text-dim); margin-bottom:10px;">車隊狀態概覽</div>
+                        <div id="fleetStatus">
+                            <!-- 車隊狀態將由JS動態生成 -->
+                        </div>
+                        <button class="btn" style="margin-top:15px; padding:8px;" onclick="optimizeFleetRoutes()">
+                            🧠 智能路線優化
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="log-container" id="logBox">
+                <div class="log-entry" style="border-color:#00ff88;">[系統啟動] AGV戰術控制台已就緒</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ========== 系統配置與全域變數 ==========
+const CONFIG = {
+    TARGET_THRESHOLD: 3.0,        // 目標到達閾值
+    MIN_SPEED: 0.5,              // 最小移動速度
+    MAX_SPEED: 10.0,             // 最大移動速度
+    AUTO_MODE_INTERVAL: 2000,    // 自動模式間隔(ms)
+    BATTERY_DRAIN_RATE: 0.002,   // 電量消耗率
+    COLLISION_RADIUS: 30,        // 碰撞檢測半徑
+    TASK_QUEUE_LIMIT: 20         // 任務隊列最大長度
+};
+
+// 系統狀態
+let currentAGV = 'AGV-01';
+let systemUptime = 0;
+let totalTasksCompleted = 0;
+let collisionAvoidanceEnabled = true;
+let systemPaused = false;
+let ctrlPressed = false;
+
+// 任務隊列系統
+let taskQueues = {
+    'AGV-01': [],
+    'AGV-02': []
+};
+
+// 車隊資料結構 - 更詳細的真實模擬
+const fleet = {
+    'AGV-01': {
+        id: 'AGV-01',
+        name: '物流型AGV-01',
+        type: 'LOGISTICS',
+        x: 50, y: 50,
+        angle: 0,
+        targetX: 50, targetY: 50,
+        state: 'IDLE', // IDLE, MOVING, PAUSED, ESTOP, CHARGING, ERROR
+        speed: 0,
+        maxSpeed: CONFIG.MAX_SPEED,
+        battery: 100,
+        color: '#00ff88',
+        path: [],
+        lastTaskTime: 0,
+        totalDistance: 0,
+        tasksCompleted: 0,
+        status: '準備中',
+        efficiency: 95,
+        collisionRisk: 0,
+        telemetry: {
+            temperature: 25.5,
+            motorCurrent: 2.1,
+            encoderCount: 0
+        }
+    },
+    'AGV-02': {
+        id: 'AGV-02',
+        name: '巡檢型AGV-02',
+        type: 'INSPECTION',
+        x: 100, y: 350,
+        angle: -1.57,
+        targetX: 100, targetY: 350,
+        state: 'IDLE',
+        speed: 0,
+        maxSpeed: CONFIG.MAX_SPEED * 0.8,
+        battery: 92,
+        color: '#00aaff',
+        path: [],
+        lastTaskTime: 0,
+        totalDistance: 0,
+        tasksCompleted: 0,
+        status: '準備中',
+        efficiency: 92,
+        collisionRisk: 0,
+        telemetry: {
+            temperature: 26.2,
+            motorCurrent: 1.8,
+            encoderCount: 0
+        }
+    }
+};
+
+// 地圖元素
+const obstacles = [
+    {x: 250, y: 100, w: 50, h: 200, type: 'RACK'},
+    {x: 600, y: 250, w: 150, h: 50, type: 'WORKSTATION'},
+    {x: 400, y: 150, w: 30, h: 30, type: 'PILLAR'},
+    {x: 100, y: 200, w: 80, h: 40, type: 'MACHINE'}
+];
+
+// 重要站點
+const stations = {
+    dock: {x: 800, y: 50, type: 'DOCKING', name: '充電站'},
+    pickup: {x: 700, y: 400, type: 'PICKUP', name: '取貨點'},
+    delivery: {x: 100, y: 450, type: 'DELIVERY', name: '送貨點'}
+};
+
+// 視覺效果
+let clickEffects = [];
+let pathPoints = [];
+let lastUpdateTime = 0;
+
+// ========== 初始化系統 ==========
+const canvas = document.getElementById('mapCanvas');
+const ctx = canvas.getContext('2d');
+
+function initSystem() {
+    // 初始化畫布
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    // 初始化事件監聽器
+    initEventListeners();
+    
+    // 啟動系統計時器
+    setInterval(updateSystemUptime, 1000);
+    
+    // 啟動自動任務生成器
+    setInterval(autoTaskGenerator, 5000);
+    
+    // 啟動主要遊戲循環
+    requestAnimationFrame(gameLoop);
+    
+    // 更新UI
+    updateAllUI();
+    
+    addLog('SYSTEM', 'INFO', '系統初始化完成，等待指令...');
+}
+
+function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const newWidth = Math.floor(rect.width);
+    const newHeight = Math.floor(rect.height);
+    
+    if (canvas.width !== newWidth || canvas.height !== newHeight) {
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+    }
+}
+
+function initEventListeners() {
+    // 畫布點擊事件
+    canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
+        
+        if (e.ctrlKey || e.metaKey) {
+            // Ctrl+點擊：添加到任務隊列
+            addTaskToQueue(currentAGV, x, y);
+        } else {
+            // 普通點擊：直接導航
+            navigateAGV(currentAGV, x, y, true);
+        }
+    });
+    
+    // 鍵盤事件
+    document.addEventListener('keydown', (e) => {
+        ctrlPressed = e.ctrlKey || e.metaKey;
+    });
+    
+    document.addEventListener('keyup', (e) => {
+        ctrlPressed = e.ctrlKey || e.metaKey;
+    });
+    
+    // 滑動條事件
+    document.getElementById('speedLimit').addEventListener('input', (e) => {
+        const value = e.target.value;
+        document.getElementById('speedValue').textContent = value + ' 單位/秒';
+        fleet[currentAGV].maxSpeed = value * 1.0;
+        addLog(currentAGV, 'CONFIG', `最大速度設定為: ${value}`);
+    });
+    
+    document.getElementById('safetyDistance').addEventListener('input', (e) => {
+        const value = e.target.value;
+        document.getElementById('safetyValue').textContent = value + ' 像素';
+        CONFIG.COLLISION_RADIUS = parseInt(value);
+        addLog('SYSTEM', 'CONFIG', `安全距離設定為: ${value}`);
+    });
+    
+    document.getElementById('headingSlider').addEventListener('input', (e) => {
+        fleet[currentAGV].angle = (parseInt(e.target.value) * Math.PI) / 180;
+    });
+}
+
+// ========== 核心AGV移動邏輯 ==========
+function updateAGVPhysics(agv, deltaTime) {
+    if (agv.state !== 'MOVING' || systemPaused) return;
+    
+    // 計算到目標的距離和方向
+    const dx = agv.targetX - agv.x;
+    const dy = agv.targetY - agv.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // 檢查是否到達目標
+    if (distance < CONFIG.TARGET_THRESHOLD) {
+        handleArrivalAtTarget(agv);
+        return;
+    }
+    
+    // 計算目標角度
+    let targetAngle = Math.atan2(dy, dx);
+    
+    // 平滑轉向
+    let angleDiff = targetAngle - agv.angle;
+    while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+    while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+    
+    agv.angle += angleDiff * 0.2; // 轉向速度
+    
+    // 計算速度（基於距離動態調整）
+    let targetSpeed = 0;
+    if (distance > 100) {
+        targetSpeed = agv.maxSpeed;
+    } else if (distance > 50) {
+        targetSpeed = agv.maxSpeed * 0.7;
+    } else if (distance > 20) {
+        targetSpeed = agv.maxSpeed * 0.4;
+    } else {
+        targetSpeed = Math.max(CONFIG.MIN_SPEED, agv.maxSpeed * 0.2);
+    }
+    
+    // LiDAR避障檢測
+    const lidarDistance = getLidarDistance(agv);
+    if (lidarDistance < 50) {
+        targetSpeed *= (lidarDistance / 50);
+    }
+    if (lidarDistance < 20) {
+        targetSpeed = 0;
+        agv.state = 'PAUSED';
+        addLog(agv.id, 'WARN', '偵測到障礙物，暫停移動');
+    }
+    
+    // 多AGV防碰撞
+    if (collisionAvoidanceEnabled) {
+        const collisionRisk = checkCollisionRisk(agv);
+        if (collisionRisk > 0) {
+            targetSpeed *= (1 - collisionRisk);
+            agv.collisionRisk = collisionRisk;
+        }
+    }
+    
+    // 套用速度
+    agv.speed = targetSpeed;
+    
+    // 計算位移
+    const moveDistance = agv.speed * (deltaTime / 16); // 16ms基準
+    const moveX = Math.cos(agv.angle) * moveDistance;
+    const moveY = Math.sin(agv.angle) * moveDistance;
+    
+    // 邊界檢查
+    const newX = agv.x + moveX;
+    const newY = agv.y + moveY;
+    
+    if (newX > 10 && newX < canvas.width - 10 && newY > 10 && newY < canvas.height - 10) {
+        agv.x = newX;
+        agv.y = newY;
+        agv.totalDistance += moveDistance;
+    }
+    
+    // 更新軌跡
+    if (Math.random() > 0.7) {
+        agv.path.push({x: agv.x, y: agv.y});
+        if (agv.path.length > 40) agv.path.shift();
+    }
+    
+    // 更新電量
+    agv.battery -= CONFIG.BATTERY_DRAIN_RATE * agv.speed;
+    if (agv.battery < 0) agv.battery = 0;
+    
+    // 電量低時自動返回充電
+    if (agv.battery < 15 && agv.state !== 'CHARGING') {
+        addLog(agv.id, 'WARN', '電量不足，自動返回充電站');
+        navigateToStation(agv.id, 'dock');
+    }
+    
+    // 更新編碼器計數
+    agv.telemetry.encoderCount += moveDistance * 10;
+}
+
+function handleArrivalAtTarget(agv) {
+    agv.speed = 0;
+    totalTasksCompleted++;
+    agv.tasksCompleted++;
+    
+    // 更新任務完成時間
+    agv.lastTaskTime = Date.now();
+    
+    // 檢查是否有下一個任務
+    if (taskQueues[agv.id].length > 0) {
+        // 執行下一個任務
+        const nextTask = taskQueues[agv.id].shift();
+        agv.targetX = nextTask.x;
+        agv.targetY = nextTask.y;
+        agv.state = 'MOVING';
+        updateTaskQueueDisplay();
+        addLog(agv.id, 'TASK', `開始執行下一個任務: (${Math.round(nextTask.x)}, ${Math.round(nextTask.y)})`);
+    } else if (agv.state === 'MOVING') {
+        // 沒有更多任務，進入IDLE狀態
+        agv.state = 'IDLE';
+        agv.status = '閒置中';
+        addLog(agv.id, 'TASK', '所有任務完成，進入閒置狀態');
+    }
+    
+    // 更新UI
+    updateAllUI();
+}
+
+// ========== 任務隊列系統 ==========
+function addTaskToQueue(agvId, x, y) {
+    if (!agvId) agvId = currentAGV;
+    if (!x || !y) {
+        // 使用當前目標
+        const agv = fleet[agvId];
+        x = agv.targetX;
+        y = agv.targetY;
+    }
+    
+    if (taskQueues[agvId].length >= CONFIG.TASK_QUEUE_LIMIT) {
+        addLog(agvId, 'ERROR', '任務隊列已滿，無法添加新任務');
+        return;
+    }
+    
+    const taskId = `TASK-${Date.now()}-${Math.floor(Math.random()*1000)}`;
+    taskQueues[agvId].push({
+        id: taskId,
+        x: x,
+        y: y,
+        status: 'QUEUED',
+        timestamp: Date.now()
+    });
+    
+    updateTaskQueueDisplay();
+    addLog(agvId, 'TASK', `任務添加到隊列: (${Math.round(x)}, ${Math.round(y)})`);
+}
+
+function executeTaskQueue(agvId) {
+    if (!agvId) agvId = currentAGV;
+    
+    if (taskQueues[agvId].length === 0) {
+        addLog(agvId, 'WARN', '任務隊列為空');
+        return;
+    }
+    
+    const agv = fleet[agvId];
+    if (agv.state === 'ESTOP' || agv.state === 'ERROR') {
+        addLog(agvId, 'ERROR', 'AGV狀態異常，無法執行任務');
+        return;
+    }
+    
+    // 開始執行第一個任務
+    const firstTask = taskQueues[agvId][0];
+    agv.targetX = firstTask.x;
+    agv.targetY = firstTask.y;
+    agv.state = 'MOVING';
+    agv.status = '執行任務中';
+    
+    addLog(agvId, 'TASK', `開始執行任務隊列 (${taskQueues[agvId].length}個任務)`);
+    updateAllUI();
+}
+
+function clearTaskQueue(agvId) {
+    if (!agvId) agvId = currentAGV;
+    taskQueues[agvId] = [];
+    updateTaskQueueDisplay();
+    addLog(agvId, 'TASK', '任務隊列已清空');
+}
+
+function updateTaskQueueDisplay() {
+    const queueDiv = document.getElementById('taskQueue');
+    const agvId = currentAGV;
+    const tasks = taskQueues[agvId];
+    
+    if (tasks.length === 0) {
+        queueDiv.innerHTML = `
+            <div style="text-align:center; color:var(--text-dim); padding:20px;">
+                <div style="font-size:1.5em;">📋</div>
+                任務隊列為空
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    tasks.forEach((task, index) => {
+        const statusClass = task.status === 'COMPLETED' ? 'completed' : 
+                          task.status === 'EXECUTING' ? 'executing' : 'queued';
+        html += `
+            <div class="task-item ${statusClass}">
+                <div>
+                    <strong>任務 ${index+1}</strong><br>
+                    <span style="font-size:0.8em;">(${Math.round(task.x)}, ${Math.round(task.y)})</span>
+                </div>
+                <div style="font-size:0.7em; color:#888;">
+                    ${task.status === 'QUEUED' ? '等待中' : '執行中'}
+                </div>
+            </div>
+        `;
+    });
+    
+    queueDiv.innerHTML = html;
+    document.getElementById('totalTasks').textContent = tasks.length;
+}
+
+// ========== 導航與控制函數 ==========
+function navigateAGV(agvId, x, y, direct = true) {
+    const agv = fleet[agvId];
+    
+    if (agv.state === 'ESTOP') {
+        addLog(agvId, 'ERROR', '緊急停止中，無法移動');
+        return;
+    }
+    
+    if (direct) {
+        // 直接導航，清除現有任務隊列
+        taskQueues[agvId] = [];
+    }
+    
+    agv.targetX = x;
+    agv.targetY = y;
+    agv.state = 'MOVING';
+    agv.status = '導航中';
+    
+    // 視覺效果
+    clickEffects.push({
+        x: x, y: y, 
+        r: 0, maxR: 40, 
+        color: agv.color,
+        life: 1.0
+    });
+    
+    addLog(agvId, 'NAV', `導航至: (${Math.round(x)}, ${Math.round(y)})`);
+    updateAllUI();
+}
+
+function navigateToStation(agvId, stationType) {
+    const station = stations[stationType];
+    if (!station) {
+        addLog(agvId, 'ERROR', `未知的站點類型: ${stationType}`);
+        return;
+    }
+    
+    navigateAGV(agvId, station.x, station.y);
+    addLog(agvId, 'NAV', `導航至${station.name}`);
+}
+
+function startContinuousMission() {
+    // 為兩台AGV都啟動連續任務
+    for (const agvId in fleet) {
+        const agv = fleet[agvId];
+        if (agv.state !== 'ESTOP' && agv.state !== 'ERROR') {
+            // 清空現有隊列
+            taskQueues[agvId] = [];
+            
+            // 生成5個隨機任務
+            for (let i = 0; i < 5; i++) {
+                const x = Math.random() * (canvas.width - 100) + 50;
+                const y = Math.random() * (canvas.height - 100) + 50;
+                taskQueues[agvId].push({
+                    id: `CONT-${Date.now()}-${i}`,
+                    x: x,
+                    y: y,
+                    status: 'QUEUED',
+                    timestamp: Date.now()
+                });
+            }
+            
+            // 開始執行
+            agv.state = 'MOVING';
+            agv.status = '連續任務中';
+            
+            // 設定第一個目標
+            if (taskQueues[agvId].length > 0) {
+                const firstTask = taskQueues[agvId][0];
+                agv.targetX = firstTask.x;
+                agv.targetY = firstTask.y;
+            }
+        }
+    }
+    
+    updateTaskQueueDisplay();
+    addLog('SYSTEM', 'MISSION', '啟動連續任務模式');
+}
+
+function generateRandomPatrol() {
+    const agv = fleet[currentAGV];
+    const centerX = agv.x;
+    const centerY = agv.y;
+    
+    // 清空現有隊列
+    taskQueues[currentAGV] = [];
+    
+    // 生成巡邏路徑（圓形）
+    const radius = 150;
+    const points = 8;
+    
+    for (let i = 0; i < points; i++) {
+        const angle = (i / points) * Math.PI * 2;
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        
+        // 確保點在畫布內
+        const boundedX = Math.max(50, Math.min(canvas.width - 50, x));
+        const boundedY = Math.max(50, Math.min(canvas.height - 50, y));
+        
+        taskQueues[currentAGV].push({
+            id: `PATROL-${i}`,
+            x: boundedX,
+            y: boundedY,
+            status: 'QUEUED',
+            timestamp: Date.now()
+        });
+    }
+    
+    // 添加返回起點的任務
+    taskQueues[currentAGV].push({
+        id: 'PATROL-RETURN',
+        x: centerX,
+        y: centerY,
+        status: 'QUEUED',
+        timestamp: Date.now()
+    });
+    
+    updateTaskQueueDisplay();
+    addLog(currentAGV, 'PATROL', '生成巡邏路徑 (8個點)');
+}
+
+// ========== 感測器與檢測函數 ==========
+function getLidarDistance(agv) {
+    let minDistance = 500; // 最大偵測距離
+    
+    // 檢查障礙物
+    obstacles.forEach(obstacle => {
+        // 簡單的矩形碰撞檢測
+        const closestX = Math.max(obstacle.x, Math.min(agv.x, obstacle.x + obstacle.w));
+        const closestY = Math.max(obstacle.y, Math.min(agv.y, obstacle.y + obstacle.h));
+        
+        const dx = agv.x - closestX;
+        const dy = agv.y - closestY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < minDistance) {
+            minDistance = distance;
+        }
+    });
+    
+    // 檢查其他AGV
+    for (const otherId in fleet) {
+        if (otherId !== agv.id) {
+            const otherAGV = fleet[otherId];
+            const dx = agv.x - otherAGV.x;
+            const dy = agv.y - otherAGV.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < minDistance) {
+                minDistance = distance;
+            }
+        }
+    }
+    
+    return Math.max(0, minDistance - 15); // 減去AGV半徑
+}
+
+function checkCollisionRisk(agv) {
+    let risk = 0;
+    
+    for (const otherId in fleet) {
+        if (otherId !== agv.id) {
+            const otherAGV = fleet[otherId];
+            const dx = agv.x - otherAGV.x;
+            const dy = agv.y - otherAGV.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < CONFIG.COLLISION_RADIUS * 2) {
+                // 計算碰撞風險 (0到1)
+                risk = Math.max(risk, 1 - (distance / (CONFIG.COLLISION_RADIUS * 2)));
+            }
+        }
+    }
+    
+    return risk;
+}
+
+// ========== 繪圖函數 ==========
+function draw() {
+    if (canvas.width === 0 || canvas.height === 0) return;
+    
+    // 清空畫布
+    ctx.fillStyle = '#0b1016';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // 繪製網格
+    drawGrid();
+    
+    // 繪製站點
+    drawStations();
+    
+    // 繪製障礙物
+    drawObstacles();
+    
+    // 繪製AGV軌跡
+    for (const agvId in fleet) {
+        drawAGVPath(fleet[agvId]);
+    }
+    
+    // 繪製AGV
+    for (const agvId in fleet) {
+        drawAGV(fleet[agvId]);
+    }
+    
+    // 繪製目標點
+    for (const agvId in fleet) {
+        const agv = fleet[agvId];
+        if (agv.state === 'MOVING') {
+            drawTarget(agv);
+        }
+    }
+    
+    // 繪製點擊效果
+    drawClickEffects();
+    
+    // 繪製路徑點
+    drawPathPoints();
+}
+
+function drawGrid() {
+    ctx.strokeStyle = 'rgba(42, 59, 85, 0.3)';
+    ctx.lineWidth = 1;
+    
+    // 主要網格線
+    for (let x = 0; x < canvas.width; x += 50) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+    }
+    for (let y = 0; y < canvas.height; y += 50) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
+    
+    // 座標軸
+    ctx.strokeStyle = 'rgba(0, 255, 136, 0.5)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height - 20);
+    ctx.lineTo(canvas.width, canvas.height - 20);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.moveTo(20, 0);
+    ctx.lineTo(20, canvas.height);
+    ctx.stroke();
+}
+
+function drawStations() {
+    for (const key in stations) {
+        const station = stations[key];
+        ctx.fillStyle = station.type === 'DOCKING' ? 'rgba(0, 255, 136, 0.3)' :
+                       station.type === 'PICKUP' ? 'rgba(255, 215, 0, 0.3)' :
+                       'rgba(0, 170, 255, 0.3)';
+        
+        ctx.beginPath();
+        ctx.arc(station.x, station.y, 25, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.strokeStyle = station.type === 'DOCKING' ? '#00ff88' :
+                         station.type === 'PICKUP' ? '#ffd700' :
+                         '#00aaff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        ctx.fillStyle = 'white';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(station.name, station.x, station.y + 40);
+    }
+}
+
+function drawObstacles() {
+    obstacles.forEach(obstacle => {
+        ctx.fillStyle = obstacle.type === 'RACK' ? '#2a3b55' :
+                       obstacle.type === 'WORKSTATION' ? '#3a4b65' :
+                       '#4a5b75';
+        ctx.fillRect(obstacle.x, obstacle.y, obstacle.w, obstacle.h);
+        
+        ctx.strokeStyle = '#556677';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(obstacle.x, obstacle.y, obstacle.w, obstacle.h);
+        
+        // 障礙物標籤
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.font = '10px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(
+            obstacle.type, 
+            obstacle.x + obstacle.w / 2, 
+            obstacle.y + obstacle.h / 2
+        );
+    });
+}
+
+function drawAGV(agv) {
+    // 儲存畫布狀態
+    ctx.save();
+    
+    // 移動到AGV位置並旋轉
+    ctx.translate(agv.x, agv.y);
+    ctx.rotate(agv.angle);
+    
+    // 繪製感應範圍
+    ctx.fillStyle = agv.color + '15';
+    ctx.beginPath();
+    ctx.arc(0, 0, 50, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // 繪製車身
+    ctx.fillStyle = agv.color;
+    ctx.fillRect(-15, -12, 30, 24);
+    
+    // 繪製前後區分
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(10, -8, 5, 16); // 前燈
+    
+    ctx.fillStyle = '#ff4444';
+    ctx.fillRect(-15, -8, 5, 16); // 尾燈
+    
+    // 繪製頂部指示器
+    ctx.fillStyle = agv.state === 'MOVING' ? '#00ff88' :
+                   agv.state === 'ESTOP' ? '#ff4444' :
+                   agv.state === 'CHARGING' ? '#ffaa00' : '#888888';
+    ctx.beginPath();
+    ctx.arc(0, -18, 5, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // 恢復畫布狀態
+    ctx.restore();
+    
+    // 繪製AGV資訊
+    ctx.fillStyle = agv.color;
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(agv.id, agv.x, agv.y - 30);
+    
+    // 狀態標籤
+    ctx.fillStyle = agv.state === 'MOVING' ? '#00ff88' :
+                   agv.state === 'ESTOP' ? '#ff4444' : '#aaaaaa';
+    ctx.font = '10px Arial';
+    ctx.fillText(agv.state, agv.x, agv.y + 35);
+    
+    // 電量指示
+    const batteryWidth = 30;
+    const batteryHeight = 8;
+    const batteryX = agv.x - batteryWidth / 2;
+    const batteryY = agv.y + 45;
+    
+    ctx.strokeStyle = '#666666';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(batteryX, batteryY, batteryWidth, batteryHeight);
+    
+    const fillWidth = (agv.battery / 100) * batteryWidth;
+    ctx.fillStyle = agv.battery > 30 ? '#00ff88' : 
+                   agv.battery > 15 ? '#ffaa00' : '#ff4444';
+    ctx.fillRect(batteryX, batteryY, fillWidth, batteryHeight);
+}
+
+function drawAGVPath(agv) {
+    if (agv.path.length < 2) return;
+    
+    ctx.strokeStyle = agv.color + '80';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(agv.path[0].x, agv.path[0].y);
+    
+    for (let i = 1; i < agv.path.length; i++) {
+        ctx.lineTo(agv.path[i].x, agv.path[i].y);
+    }
+    
+    ctx.stroke();
+}
+
+function drawTarget(agv) {
+    // 目標點
+    ctx.fillStyle = agv.color;
+    ctx.beginPath();
+    ctx.arc(agv.targetX, agv.targetY, 6, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // 目標指示線
+    ctx.strokeStyle = agv.color + '80';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.moveTo(agv.x, agv.y);
+    ctx.lineTo(agv.targetX, agv.targetY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    // 目標距離標示
+    const dx = agv.targetX - agv.x;
+    const dy = agv.targetY - agv.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    ctx.fillStyle = 'white';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${Math.round(distance)}px`, agv.targetX, agv.targetY - 15);
+}
+
+function drawClickEffects() {
+    for (let i = clickEffects.length - 1; i >= 0; i--) {
+        const effect = clickEffects[i];
+        
+        ctx.strokeStyle = effect.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(effect.x, effect.y, effect.r, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        effect.r += 1.5;
+        effect.life -= 0.02;
+        
+        if (effect.r > effect.maxR || effect.life <= 0) {
+            clickEffects.splice(i, 1);
+        }
+    }
+}
+
+function drawPathPoints() {
+    pathPoints.forEach(point => {
+        ctx.fillStyle = point.color + '40';
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+    });
+}
+
+// ========== 系統控制函數 ==========
+function sendCommand(command) {
+    switch (command) {
+        case 'ESTOP_ALL':
+            for (const agvId in fleet) {
+                fleet[agvId].state = 'ESTOP';
+                fleet[agvId].status = '緊急停止';
+                fleet[agvId].speed = 0;
+            }
+            addLog('SYSTEM', 'EMERGENCY', '所有AGV緊急停止');
+            break;
+            
+        case 'PAUSE_ALL':
+            systemPaused = true;
+            for (const agvId in fleet) {
+                if (fleet[agvId].state === 'MOVING') {
+                    fleet[agvId].state = 'PAUSED';
+                    fleet[agvId].status = '已暫停';
+                }
+            }
+            addLog('SYSTEM', 'CONTROL', '所有AGV已暫停');
+            break;
+            
+        case 'RESUME_ALL':
+            systemPaused = false;
+            for (const agvId in fleet) {
+                if (fleet[agvId].state === 'PAUSED') {
+                    fleet[agvId].state = 'MOVING';
+                    fleet[agvId].status = '恢復運行';
+                }
+            }
+            addLog('SYSTEM', 'CONTROL', '所有AGV恢復運行');
+            break;
+    }
+    
+    updateAllUI();
+}
+
+function resetSystem() {
+    // 重置所有AGV狀態
+    fleet['AGV-01'] = {
+        id: 'AGV-01',
+        name: '物流型AGV-01',
+        type: 'LOGISTICS',
+        x: 50, y: 50,
+        angle: 0,
+        targetX: 50, targetY: 50,
+        state: 'IDLE',
+        speed: 0,
+        maxSpeed: CONFIG.MAX_SPEED,
+        battery: 100,
+        color: '#00ff88',
+        path: [],
+        lastTaskTime: 0,
+        totalDistance: 0,
+        tasksCompleted: 0,
+        status: '準備中',
+        efficiency: 95,
+        collisionRisk: 0,
+        telemetry: {
+            temperature: 25.5,
+            motorCurrent: 2.1,
+            encoderCount: 0
+        }
+    };
+    
+    fleet['AGV-02'] = {
+        id: 'AGV-02',
+        name: '巡檢型AGV-02',
+        type: 'INSPECTION',
+        x: 100, y: 350,
+        angle: -1.57,
+        targetX: 100, targetY: 350,
+        state: 'IDLE',
+        speed: 0,
+        maxSpeed: CONFIG.MAX_SPEED * 0.8,
+        battery: 92,
+        color: '#00aaff',
+        path: [],
+        lastTaskTime: 0,
+        totalDistance: 0,
+        tasksCompleted: 0,
+        status: '準備中',
+        efficiency: 92,
+        collisionRisk: 0,
+        telemetry: {
+            temperature: 26.2,
+            motorCurrent: 1.8,
+            encoderCount: 0
+        }
+    };
+    
+    // 清空任務隊列
+    taskQueues = {
+        'AGV-01': [],
+        'AGV-02': []
+    };
+    
+    // 重置系統狀態
+    systemPaused = false;
+    totalTasksCompleted = 0;
+    
+    // 更新UI
+    updateAllUI();
+    updateTaskQueueDisplay();
+    
+    addLog('SYSTEM', 'RESET', '系統已重置');
+}
+
+function toggleCollisionAvoidance() {
+    collisionAvoidanceEnabled = !collisionAvoidanceEnabled;
+    const status = collisionAvoidanceEnabled ? '啟用' : '停用';
+    addLog('SYSTEM', 'SAFETY', `防碰撞系統 ${status}`);
+    updateAllUI();
+}
+
+function updateHeading(value) {
+    fleet[currentAGV].angle = (parseInt(value) * Math.PI) / 180;
+    document.getElementById('val-heading').textContent = value + '°';
+}
+
+// ========== UI更新函數 ==========
+function updateAllUI() {
+    const agv = fleet[currentAGV];
+    
+    // 更新AGV狀態
+    document.getElementById(`status-${agv.id.split('-')[1]}`).textContent = agv.status;
+    document.getElementById(`battery-${agv.id.split('-')[1]}`).textContent = Math.floor(agv.battery) + '%';
+    
+    // 更新遙測資料
+    document.getElementById('val-speed').textContent = agv.speed.toFixed(1) + ' 單位/秒';
+    document.getElementById('bar-speed').style.width = (agv.speed / agv.maxSpeed * 100) + '%';
+    
+    document.getElementById('val-bat').textContent = Math.floor(agv.battery) + '%';
+    document.getElementById('bar-bat').style.width = agv.battery + '%';
+    
+    const lidarDist = getLidarDistance(agv);
+    document.getElementById('val-lidar').textContent = Math.floor(lidarDist) + ' 像素';
+    document.getElementById('bar-lidar').style.width = Math.min(100, (lidarDist / 200 * 100)) + '%';
+    
+    document.getElementById('val-heading').textContent = Math.round((agv.angle * 180) / Math.PI) + '°';
+    document.getElementById('headingSlider').value = Math.round((agv.angle * 180) / Math.PI);
+    
+    // 更新車隊狀態
+    updateFleetStatus();
+    
+    // 更新系統狀態
+    document.getElementById('activeVehicles').textContent = Object.values(fleet).filter(a => a.state === 'MOVING').length;
+}
+
+function updateFleetStatus() {
+    const fleetDiv = document.getElementById('fleetStatus');
+    let html = '';
+    
+    for (const agvId in fleet) {
+        const agv = fleet[agvId];
+        const stateColor = agv.state === 'MOVING' ? '#00ff88' :
+                          agv.state === 'ESTOP' ? '#ff4444' :
+                          agv.state === 'IDLE' ? '#ffaa00' : '#888888';
+        
+        html += `
+            <div style="margin-bottom:10px; padding:10px; background:rgba(31,42,64,0.5); border-radius:5px; border-left:4px solid ${stateColor};">
+                <div style="display:flex; justify-content:space-between;">
+                    <strong>${agv.id}</strong>
+                    <span style="color:${stateColor};">${agv.state}</span>
+                </div>
+                <div style="font-size:0.8em; color:var(--text-dim); margin-top:5px;">
+                    電量: ${Math.floor(agv.battery)}% | 
+                    速度: ${agv.speed.toFixed(1)} | 
+                    距離: ${Math.floor(agv.totalDistance)}
+                </div>
+            </div>
+        `;
+    }
+    
+    fleetDiv.innerHTML = html;
+}
+
+function updateSystemUptime() {
+    systemUptime++;
+    const minutes = Math.floor(systemUptime / 60);
+    const seconds = systemUptime % 60;
+    document.getElementById('systemUptime').textContent = 
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// ========== 工具函數 ==========
+function selectAGV(agvId) {
+    currentAGV = agvId;
+    
+    // 更新AGV卡片狀態
+    document.querySelectorAll('.agv-card').forEach(card => {
+        card.classList.remove('active');
+    });
+    
+    const card = document.querySelector(`.agv-card:nth-child(${agvId === 'AGV-01' ? 1 : 2})`);
+    if (card) card.classList.add('active');
+    
+    // 更新任務隊列顯示
+    updateTaskQueueDisplay();
+    
+    // 更新UI
+    updateAllUI();
+    
+    addLog(agvId, 'SELECT', '選中此AGV進行控制');
+}
+
+function switchTab(tabName) {
+    // 更新按鈕狀態
+    document.querySelectorAll('#mission-tab, #navigation-tab, #settings-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // 啟用選中的分頁
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+    document.querySelector(`.tab-button[onclick*="${tabName}"]`).classList.add('active');
+}
+
+function switchMonitorTab(tabName) {
+    // 更新按鈕狀態
+    document.querySelectorAll('#telemetry-tab, #diagnostics-tab, #fleet-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.querySelectorAll('.right-panel .tab-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // 啟用選中的分頁
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+    document.querySelector(`.right-panel .tab-button[onclick*="${tabName}"]`).classList.add('active');
+}
+
+function addLog(source, type, message) {
+    const logBox = document.getElementById('logBox');
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    
+    // 設定日誌顏色
+    let color = '#00ff88'; // 預設綠色
+    if (type === 'ERROR') color = '#ff6b35';
+    else if (type === 'WARN') color = '#ffaa00';
+    else if (type === 'NAV') color = '#00aaff';
+    else if (type === 'TASK') color = '#aa00ff';
+    else if (type === 'EMERGENCY') color = '#ff4444';
+    
+    entry.style.borderColor = color;
+    
+    // 格式化時間
+    const now = new Date();
+    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+    
+    entry.innerHTML = `[${timeStr}] <strong>${source}</strong>: ${message}`;
+    
+    // 添加到日誌頂部
+    logBox.insertBefore(entry, logBox.firstChild);
+    
+    // 限制日誌數量
+    if (logBox.children.length > 50) {
+        logBox.removeChild(logBox.lastChild);
+    }
+}
+
+function runDiagnostics() {
+    addLog('SYSTEM', 'DIAG', '開始系統診斷...');
+    
+    // 模擬診斷過程
+    setTimeout(() => {
+        addLog('SYSTEM', 'DIAG', '診斷完成: 所有系統正常');
+        
+        // 更新診斷狀態
+        document.getElementById('diagnosticsList').innerHTML = `
+            <div class="diagnostic-item" style="padding:8px; margin-bottom:5px; border-left:3px solid #00ff88; background:rgba(0,255,136,0.1);">
+                ✅ 導航系統: 正常 (精度: 99.2%)
+            </div>
+            <div class="diagnostic-item" style="padding:8px; margin-bottom:5px; border-left:3px solid #00ff88; background:rgba(0,255,136,0.1);">
+                ✅ 通訊系統: 正常 (延遲: 12ms)
+            </div>
+            <div class="diagnostic-item" style="padding:8px; margin-bottom:5px; border-left:3px solid #00ff88; background:rgba(0,255,136,0.1);">
+                ✅ 電源系統: 正常 (電壓: 24.2V)
+            </div>
+            <div class="diagnostic-item" style="padding:8px; margin-bottom:5px; border-left:3px solid #00ff88; background:rgba(0,255,136,0.1);">
+                ✅ 感測器系統: 正常 (LiDAR: 在線)
+            </div>
+            <div class="diagnostic-item" style="padding:8px; margin-bottom:5px; border-left:3px solid #00ff88; background:rgba(0,255,136,0.1);">
+                ✅ 控制系統: 正常 (響應: 優良)
+            </div>
+        `;
+    }, 1000);
+}
+
+function optimizeFleetRoutes() {
+    addLog('SYSTEM', 'OPTIMIZE', '開始智能路線優化...');
+    
+    // 簡單的路線優化邏輯
+    let optimizedCount = 0;
+    
+    for (const agvId in fleet) {
+        if (taskQueues[agvId].length > 1) {
+            // 簡單優化：按距離排序任務
+            const agv = fleet[agvId];
+            taskQueues[agvId].sort((a, b) => {
+                const distA = Math.sqrt(Math.pow(a.x - agv.x, 2) + Math.pow(a.y - agv.y, 2));
+                const distB = Math.sqrt(Math.pow(b.x - agv.x, 2) + Math.pow(b.y - agv.y, 2));
+                return distA - distB;
+            });
+            
+            optimizedCount++;
+        }
+    }
+    
+    updateTaskQueueDisplay();
+    addLog('SYSTEM', 'OPTIMIZE', `路線優化完成，優化了${optimizedCount}台AGV的路線`);
+}
+
+function autoTaskGenerator() {
+    // 自動為閒置的AGV生成任務
+    for (const agvId in fleet) {
+        const agv = fleet[agvId];
+        
+        // 如果AGV閒置且電量充足，自動生成任務
+        if (agv.state === 'IDLE' && agv.battery > 20 && Math.random() > 0.7) {
+            const x = Math.random() * (canvas.width - 100) + 50;
+            const y = Math.random() * (canvas.height - 100) + 50;
+            
+            addTaskToQueue(agvId, x, y);
+            
+            // 如果沒有正在執行的任務，開始執行
+            if (agv.state === 'IDLE') {
+                executeTaskQueue(agvId);
+            }
+        }
+    }
+}
+
+// ========== 主要遊戲循環 ==========
+function gameLoop(timestamp) {
+    // 計算時間增量
+    const deltaTime = lastUpdateTime ? timestamp - lastUpdateTime : 16;
+    lastUpdateTime = timestamp;
+    
+    // 更新所有AGV物理狀態
+    if (!systemPaused) {
+        for (const agvId in fleet) {
+            updateAGVPhysics(fleet[agvId], deltaTime);
+        }
+    }
+    
+    // 更新視覺效果
+    updateVisualEffects();
+    
+    // 繪製場景
+    draw();
+    
+    // 更新UI
+    updateAllUI();
+    
+    // 請求下一幀
+    requestAnimationFrame(gameLoop);
+}
+
+function updateVisualEffects() {
+    // 更新點擊效果
+    clickEffects.forEach(effect => {
+        effect.r += 1.5;
+        effect.life -= 0.02;
+    });
+    
+    // 移除已結束的效果
+    clickEffects = clickEffects.filter(effect => effect.r <= effect.maxR && effect.life > 0);
+}
+
+// ========== 啟動系統 ==========
+window.addEventListener('load', initSystem);
+
+// 導航輔助函數
+function navigateToPoint(pointType) {
+    navigateToStation(currentAGV, pointType);
+}
+
+function navigateToManual() {
+    const x = parseInt(document.getElementById('coordX').value);
+    const y = parseInt(document.getElementById('coordY').value);
+    
+    if (isNaN(x) || isNaN(y)) {
+        addLog(currentAGV, 'ERROR', '請輸入有效的座標');
+        return;
+    }
+    
+    navigateAGV(currentAGV, x, y, true);
+}
+</script>
+</body>
+</html>
